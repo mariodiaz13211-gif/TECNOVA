@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+  --color-ink: #05070c;
+  --color-ink-soft: #0c111b;
+  --color-panel: #10151f;
+  --color-line: #212a38;
+  --color-paper: #f4f6f9;
+  --color-silver: #9aa5b3;
+  --color-silver-dim: #5b6474;
+  --color-electric: #2b5cff;
+  --color-electric-soft: #1c3aa8;
+  --color-cyan: #17e0e0;
+}
+
+@theme inline {
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-panel: var(--color-panel);
+  --color-line: var(--color-line);
+  --color-paper: var(--color-paper);
+  --color-silver: var(--color-silver);
+  --color-silver-dim: var(--color-silver-dim);
+  --color-electric: var(--color-electric);
+  --color-electric-soft: var(--color-electric-soft);
+  --color-cyan: var(--color-cyan);
+  --font-display: var(--font-space-grotesk);
+  --font-body: var(--font-inter);
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-body);
+}
+
+::selection {
+  background: var(--color-electric);
+  color: var(--color-paper);
+}
+
+.beam {
+  background: linear-gradient(
+    100deg,
+    var(--color-electric) 0%,
+    var(--color-cyan) 100%
+  );
+}
+
+.corner-cut {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 18px),
+    calc(100% - 18px) 100%,
+    0 100%
+  );
+}
