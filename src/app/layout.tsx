@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -21,16 +19,18 @@ export const metadata: Metadata = {
     "Audífonos, bocinas, soportes, cargadores y accesorios tecnológicos con envíos a todo El Salvador.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="es"
       className={`${spaceGrotesk.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-ink text-paper">
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
+        {children}
       </body>
     </html>
   );
