@@ -53,6 +53,7 @@ export const products = pgTable(
     status: productStatus("status").notNull().default("AVAILABLE"),
     featured: boolean("featured").notNull().default(false),
     onSale: boolean("on_sale").notNull().default(false),
+    salePrice: numeric("sale_price", { precision: 10, scale: 2 }),
     active: boolean("active").notNull().default(true),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

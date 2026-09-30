@@ -31,6 +31,9 @@ export default async function PanelLayout({
               <Link href="/admin/categorias" className="hover:text-paper">
                 Categorías
               </Link>
+              <Link href="/admin/productos" className="hover:text-paper">
+                Productos
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-5 text-sm">

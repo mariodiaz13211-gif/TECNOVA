@@ -25,10 +25,13 @@ export default async function AdminHome() {
           <p className="text-3xl font-display text-paper">{cat.n}</p>
           <p className="mt-1 text-sm text-silver">Categorías</p>
         </Link>
-        <div className="border border-line bg-panel/40 p-6">
+        <Link
+          href="/admin/productos"
+          className="border border-line bg-panel/70 p-6 hover:border-electric/60"
+        >
           <p className="text-3xl font-display text-paper">{prod.n}</p>
           <p className="mt-1 text-sm text-silver">Productos</p>
-        </div>
+        </Link>
       </div>
     </div>
   );
