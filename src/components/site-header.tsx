@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CartBadge } from "./cart-badge";
 
 export function SiteHeader() {
   return (
@@ -29,9 +30,10 @@ export function SiteHeader() {
 
         <Link
           href="/cotizacion"
-          className="rounded-sm border border-electric/60 bg-electric/10 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-electric/20"
+          className="flex items-center rounded-sm border border-electric/60 bg-electric/10 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-electric/20"
         >
           Mi cotización
+          <CartBadge />
         </Link>
       </div>
     </header>
