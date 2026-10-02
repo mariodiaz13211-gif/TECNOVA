@@ -2,7 +2,8 @@ import Link from "next/link";
 import { asc, eq, ilike } from "drizzle-orm";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
-import { ProductCard, type CatalogProduct } from "./product-card";
+import { ProductCard } from "./product-card";
+import { toProductSummary, type ProductSummary } from "@/lib/catalog-types";
 
 export const dynamic = "force-dynamic";
 
@@ -45,24 +46,7 @@ export default async function CatalogoPage({
     },
   });
 
-  const products: CatalogProduct[] = rows.map((p) => ({
-    id: p.id,
-    name: p.name,
-    slug: p.slug,
-    basePrice: p.basePrice,
-    status: p.status,
-    onSale: p.onSale,
-    salePrice: p.salePrice,
-    categoryName: p.category?.name ?? null,
-    imageUrl: p.images[0]?.url ?? null,
-    tiers: p.priceTiers.map((t) => ({
-      minQty: t.minQty,
-      maxQty: t.maxQty,
-      type: t.type,
-      value: t.value,
-      active: t.active,
-    })),
-  }));
+  const products: ProductSummary[] = rows.map(toProductSummary);
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">

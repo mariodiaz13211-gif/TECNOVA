@@ -3,22 +3,10 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useCart } from "@/components/cart-context";
-import { formatUSD, unitPriceForQty, type PriceTierLike } from "@/lib/pricing";
+import { formatUSD, unitPriceForQty } from "@/lib/pricing";
+import type { ProductSummary } from "@/lib/catalog-types";
 
-export type CatalogProduct = {
-  id: string;
-  name: string;
-  slug: string;
-  basePrice: string;
-  status: "AVAILABLE" | "SOLD_OUT";
-  onSale: boolean;
-  salePrice: string | null;
-  categoryName: string | null;
-  imageUrl: string | null;
-  tiers: PriceTierLike[];
-};
-
-export function ProductCard({ product }: { product: CatalogProduct }) {
+export function ProductCard({ product }: { product: ProductSummary }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const { setQty: setCartQty } = useCart();
