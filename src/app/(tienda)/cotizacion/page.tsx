@@ -9,9 +9,10 @@ import type { ProductSummary } from "@/lib/catalog-types";
 import { getCotizacionProducts } from "./actions";
 import { QuoteItem } from "./quote-item";
 import { CustomerForm } from "./customer-form";
+import { QuoteActions } from "./quote-actions";
 
 export default function CotizacionPage() {
-  const { items, removeItem } = useCart();
+  const { items, removeItem, customer, quoteNumber } = useCart();
   const [productsById, setProductsById] = useState<Record<string, ProductSummary>>({});
   const [loading, setLoading] = useState(true);
 
@@ -136,6 +137,15 @@ export default function CotizacionPage() {
               Envío ${SHIPPING_COST} a nivel nacional, gratis desde {formatUSD(SHIPPING_FREE_FROM)}.
             </p>
           </div>
+
+          {!loading && validItems.length > 0 && (
+            <QuoteActions
+              quoteNumber={quoteNumber}
+              customer={customer}
+              items={validItems}
+              total={total}
+            />
+          )}
 
           <CustomerForm />
         </div>

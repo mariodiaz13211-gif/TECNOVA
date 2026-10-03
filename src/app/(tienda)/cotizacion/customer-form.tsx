@@ -2,25 +2,18 @@
 
 import { useState, type FormEvent } from "react";
 import { useCart } from "@/components/cart-context";
+import { missingCustomerFields } from "@/lib/customer-validation";
 
 const input =
   "mt-1 w-full rounded-sm border border-line bg-panel px-3 py-2 text-sm text-paper outline-none focus:border-electric";
 const label = "text-sm text-silver";
-
-const REQUIRED_FIELDS = [
-  ["nombre", "Nombre completo"],
-  ["telefono", "Número de teléfono"],
-  ["departamento", "Departamento"],
-  ["municipio", "Municipio"],
-  ["direccion", "Dirección de entrega"],
-] as const;
 
 export function CustomerForm() {
   const { customer, setCustomer } = useCart();
   const [touched, setTouched] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const missing = REQUIRED_FIELDS.filter(([key]) => !customer[key].trim());
+  const missing = missingCustomerFields(customer);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -88,7 +81,7 @@ export function CustomerForm() {
 
       {touched && missing.length > 0 && (
         <p role="alert" className="text-sm text-red-400">
-          Falta completar: {missing.map(([, label]) => label).join(", ")}.
+          Falta completar: {missing.join(", ")}.
         </p>
       )}
       {saved && (
