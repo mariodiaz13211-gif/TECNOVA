@@ -34,6 +34,12 @@ export default async function PanelLayout({
               <Link href="/admin/productos" className="hover:text-paper">
                 Productos
               </Link>
+              <Link href="/admin/cotizaciones" className="hover:text-paper">
+                Cotizaciones
+              </Link>
+              <Link href="/admin/configuracion" className="hover:text-paper">
+                Configuración
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-5 text-sm">

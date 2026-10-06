@@ -15,6 +15,13 @@
       "when": 1790727584774,
       "tag": "0001_productos-oferta",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791053092664,
+      "tag": "0002_cotizaciones",
+      "breakpoints": true
     }
   ]
 }

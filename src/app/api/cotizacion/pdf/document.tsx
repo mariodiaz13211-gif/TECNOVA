@@ -63,6 +63,7 @@ export type QuotePdfItem = {
 };
 
 export type QuotePdfProps = {
+  storeName: string;
   quoteNumber: string;
   date: string;
   customer: Customer;
@@ -73,6 +74,7 @@ export type QuotePdfProps = {
 };
 
 export function QuotePdfDocument({
+  storeName,
   quoteNumber,
   date,
   customer,
@@ -86,9 +88,13 @@ export function QuotePdfDocument({
       <Page size="LETTER" style={styles.page}>
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.brand}>
-              tec<Text style={styles.brandAccent}>nova</Text>
-            </Text>
+            {storeName.trim().toLowerCase() === "tecnova" ? (
+              <Text style={styles.brand}>
+                tec<Text style={styles.brandAccent}>nova</Text>
+              </Text>
+            ) : (
+              <Text style={styles.brand}>{storeName}</Text>
+            )}
             <Text style={styles.slogan}>Innovación en tecnología para tu día a día</Text>
           </View>
           <View style={styles.quoteBox}>

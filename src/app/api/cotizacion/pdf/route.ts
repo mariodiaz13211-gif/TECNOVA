@@ -1,99 +1,78 @@
 import { NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { getCotizacionProducts } from "@/app/(tienda)/cotizacion/actions";
-import { unitPriceForQty } from "@/lib/pricing";
-import { shippingFor } from "@/lib/shipping";
-import { missingCustomerFields } from "@/lib/customer-validation";
-import type { Customer } from "@/components/cart-context";
+import { db } from "@/db";
+import { quotations } from "@/db/schema";
+import { getSettings } from "@/lib/settings";
 import { QuotePdfDocument, type QuotePdfItem } from "./document";
 
 export const runtime = "nodejs";
 
-type RequestBody = {
-  quoteNumber?: unknown;
-  customer?: Partial<Customer>;
-  items?: { productId?: unknown; qty?: unknown }[];
-};
-
-function isNonEmptyString(v: unknown): v is string {
-  return typeof v === "string" && v.trim().length > 0;
-}
-
+/**
+ * Genera el PDF a partir de una cotización YA GUARDADA (ver
+ * saveQuotation en app/(tienda)/cotizacion/actions.ts). No recibe precios
+ * ni totales del navegador: todo sale de la fila guardada en PostgreSQL,
+ * que es exactamente la misma que usa el botón de WhatsApp.
+ */
 export async function POST(request: Request) {
-  let body: RequestBody;
+  let body: { quotationId?: unknown };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
   }
 
-  const quoteNumber = isNonEmptyString(body.quoteNumber) ? body.quoteNumber : null;
-  if (!quoteNumber) {
-    return NextResponse.json({ error: "Falta el número de cotización." }, { status: 400 });
+  const quotationId = typeof body.quotationId === "string" ? body.quotationId : null;
+  if (!quotationId) {
+    return NextResponse.json({ error: "Falta la cotización a generar." }, { status: 400 });
   }
 
-  const customer: Customer = {
-    nombre: body.customer?.nombre ?? "",
-    telefono: body.customer?.telefono ?? "",
-    direccion: body.customer?.direccion ?? "",
-    departamento: body.customer?.departamento ?? "",
-    municipio: body.customer?.municipio ?? "",
-  };
-  const missing = missingCustomerFields(customer);
-  if (missing.length > 0) {
-    return NextResponse.json(
-      { error: `Faltan datos del cliente: ${missing.join(", ")}.` },
-      { status: 400 },
-    );
-  }
-
-  const rawItems = Array.isArray(body.items) ? body.items : [];
-  const requestedQtyById = new Map<string, number>();
-  for (const item of rawItems) {
-    if (!isNonEmptyString(item.productId)) continue;
-    const qty = Number(item.qty);
-    if (!Number.isFinite(qty) || qty < 1) continue;
-    requestedQtyById.set(item.productId, Math.floor(qty));
-  }
-  if (requestedQtyById.size === 0) {
-    return NextResponse.json({ error: "La cotización no tiene productos." }, { status: 400 });
-  }
-
-  // Los precios NUNCA se confían del cliente: se recalculan aquí con los
-  // mismos datos y la misma función que usa la página /cotizacion.
-  const products = await getCotizacionProducts([...requestedQtyById.keys()]);
-
-  const pdfItems: QuotePdfItem[] = products.map((product) => {
-    const qty = requestedQtyById.get(product.id)!;
-    const unitPrice = unitPriceForQty(product, product.tiers, qty);
-    return { name: product.name, qty, unitPrice, subtotal: unitPrice * qty };
+  const quotation = await db.query.quotations.findFirst({
+    where: eq(quotations.id, quotationId),
+    with: { items: true },
   });
-
-  if (pdfItems.length === 0) {
-    return NextResponse.json(
-      { error: "Ninguno de los productos de tu cotización sigue disponible." },
-      { status: 400 },
-    );
+  if (!quotation) {
+    return NextResponse.json({ error: "Esa cotización ya no existe." }, { status: 404 });
   }
 
-  const subtotal = pdfItems.reduce((sum, i) => sum + i.subtotal, 0);
-  const shipping = shippingFor(subtotal);
-  const total = subtotal + shipping;
+  const settings = await getSettings();
 
-  const date = new Date().toLocaleDateString("es-SV", {
+  const items: QuotePdfItem[] = quotation.items.map((item) => ({
+    name: item.productName,
+    qty: item.qty,
+    unitPrice: Number(item.unitPrice),
+    subtotal: Number(item.subtotal),
+  }));
+
+  const date = quotation.createdAt.toLocaleDateString("es-SV", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
 
   const pdfBuffer = await renderToBuffer(
-    QuotePdfDocument({ quoteNumber, date, customer, items: pdfItems, subtotal, shipping, total }),
+    QuotePdfDocument({
+      storeName: settings.storeName,
+      quoteNumber: quotation.number,
+      date,
+      customer: {
+        nombre: quotation.customerName,
+        telefono: quotation.customerPhone,
+        direccion: quotation.customerAddress,
+        departamento: quotation.customerDepartamento,
+        municipio: quotation.customerMunicipio,
+      },
+      items,
+      subtotal: Number(quotation.subtotal),
+      shipping: Number(quotation.shipping),
+      total: Number(quotation.total),
+    }),
   );
 
   return new NextResponse(new Uint8Array(pdfBuffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${quoteNumber}.pdf"`,
+      "Content-Disposition": `attachment; filename="${quotation.number}.pdf"`,
     },
   });
 }

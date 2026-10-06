@@ -1,14 +1,15 @@
 import Link from "next/link";
-import { count } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { categories, products } from "@/db/schema";
+import { categories, products, quotations } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminHome() {
-  const [[cat], [prod]] = await Promise.all([
+  const [[cat], [prod], [pending]] = await Promise.all([
     db.select({ n: count() }).from(categories),
     db.select({ n: count() }).from(products),
+    db.select({ n: count() }).from(quotations).where(eq(quotations.status, "PENDING")),
   ]);
 
   return (
@@ -31,6 +32,13 @@ export default async function AdminHome() {
         >
           <p className="text-3xl font-display text-paper">{prod.n}</p>
           <p className="mt-1 text-sm text-silver">Productos</p>
+        </Link>
+        <Link
+          href="/admin/cotizaciones?estado=PENDING"
+          className="border border-line bg-panel/70 p-6 hover:border-electric/60"
+        >
+          <p className="text-3xl font-display text-paper">{pending.n}</p>
+          <p className="mt-1 text-sm text-silver">Cotizaciones pendientes</p>
         </Link>
       </div>
     </div>

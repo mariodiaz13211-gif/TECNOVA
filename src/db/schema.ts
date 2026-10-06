@@ -16,6 +16,12 @@ export const productStatus = pgEnum("product_status", [
   "SOLD_OUT",
 ]);
 export const tierType = pgEnum("tier_type", ["FIXED_PRICE", "PERCENT_OFF"]);
+export const quotationStatus = pgEnum("quotation_status", [
+  "PENDING",
+  "CONTACTED",
+  "CONFIRMED",
+  "CANCELLED",
+]);
 
 const id = () =>
   text("id")
@@ -97,6 +103,46 @@ export const settings = pgTable("settings", {
   updatedAt: updatedAt(),
 });
 
+export const quotations = pgTable(
+  "quotations",
+  {
+    id: id(),
+    number: text("number").notNull().unique(),
+    customerName: text("customer_name").notNull(),
+    customerPhone: text("customer_phone").notNull(),
+    customerAddress: text("customer_address").notNull(),
+    customerDepartamento: text("customer_departamento").notNull(),
+    customerMunicipio: text("customer_municipio").notNull(),
+    subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull(),
+    shipping: numeric("shipping", { precision: 10, scale: 2 }).notNull(),
+    total: numeric("total", { precision: 10, scale: 2 }).notNull(),
+    status: quotationStatus("status").notNull().default("PENDING"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("quotations_created_idx").on(t.createdAt)],
+);
+
+export const quotationItems = pgTable(
+  "quotation_items",
+  {
+    id: id(),
+    quotationId: text("quotation_id")
+      .notNull()
+      .references(() => quotations.id, { onDelete: "cascade" }),
+    // Referencia al producto solo para trazabilidad; si el producto se
+    // borra, la cotización histórica se conserva igual gracias a los
+    // campos de abajo, que son una COPIA fija de cómo era el producto en
+    // el momento de cotizar (el nombre o precio actual puede ser distinto).
+    productId: text("product_id").references(() => products.id, { onDelete: "set null" }),
+    productName: text("product_name").notNull(),
+    qty: integer("qty").notNull(),
+    unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
+    subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull(),
+  },
+  (t) => [index("quotation_items_quotation_idx").on(t.quotationId)],
+);
+
 export const categoriesRelations = relations(categories, ({ many }) => ({
   products: many(products),
 }));
@@ -121,5 +167,16 @@ export const priceTiersRelations = relations(priceTiers, ({ one }) => ({
   product: one(products, {
     fields: [priceTiers.productId],
     references: [products.id],
+  }),
+}));
+
+export const quotationsRelations = relations(quotations, ({ many }) => ({
+  items: many(quotationItems),
+}));
+
+export const quotationItemsRelations = relations(quotationItems, ({ one }) => ({
+  quotation: one(quotations, {
+    fields: [quotationItems.quotationId],
+    references: [quotations.id],
   }),
 }));

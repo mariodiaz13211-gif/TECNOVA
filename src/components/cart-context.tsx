@@ -8,7 +8,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { generateQuoteNumber } from "@/lib/quote-number";
 
 export type CartItem = {
   productId: string;
@@ -22,6 +21,14 @@ export type Customer = {
   direccion: string;
   departamento: string;
   municipio: string;
+};
+
+/** Cotización ya registrada en PostgreSQL (ver saveQuotation en el servidor). */
+export type SavedQuotationRef = {
+  id: string;
+  number: string;
+  /** Huella de los productos+datos del cliente con los que se guardó (ver src/lib/quote-signature.ts). */
+  signature: string;
 };
 
 const EMPTY_CUSTOMER: Customer = {
@@ -39,36 +46,41 @@ type CartContextValue = {
   removeItem: (productId: string) => void;
   customer: Customer;
   setCustomer: (patch: Partial<Customer>) => void;
-  /**
-   * Identificador provisional de esta cotización (ver src/lib/quote-number.ts).
-   * Se genera una vez por cotización y se mantiene mientras haya productos.
-   */
-  quoteNumber: string;
+  savedQuotation: SavedQuotationRef | null;
+  setSavedQuotation: (ref: SavedQuotationRef | null) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "tecnova_cotizacion";
 
 /**
- * La Fase 3 guardaba solo el arreglo de productos en localStorage.
- * Esta función acepta esa forma antigua (un arreglo) además de la nueva
- * ({items, customer}), para no perder cotizaciones ya guardadas en el
- * navegador del cliente.
+ * Formas antiguas que ya pudieron quedar guardadas en el navegador de un
+ * cliente: un arreglo plano (Fase 3) o {items, customer, quoteNumber}
+ * (Fase 5, con un número generado en el navegador que ya no se usa). Ambas
+ * se migran sin perder los productos ni los datos del cliente.
  */
-function parseStored(raw: string): { items: CartItem[]; customer: Customer; quoteNumber: string } {
+function parseStored(raw: string): {
+  items: CartItem[];
+  customer: Customer;
+  savedQuotation: SavedQuotationRef | null;
+} {
   const parsed = JSON.parse(raw);
-  if (Array.isArray(parsed)) return { items: parsed, customer: EMPTY_CUSTOMER, quoteNumber: "" };
+  if (Array.isArray(parsed)) return { items: parsed, customer: EMPTY_CUSTOMER, savedQuotation: null };
+  const saved = parsed?.savedQuotation;
   return {
     items: Array.isArray(parsed?.items) ? parsed.items : [],
     customer: { ...EMPTY_CUSTOMER, ...(parsed?.customer ?? {}) },
-    quoteNumber: typeof parsed?.quoteNumber === "string" ? parsed.quoteNumber : "",
+    savedQuotation:
+      saved && typeof saved.id === "string" && typeof saved.number === "string"
+        ? { id: saved.id, number: saved.number, signature: saved.signature ?? "" }
+        : null,
   };
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [customer, setCustomerState] = useState<Customer>(EMPTY_CUSTOMER);
-  const [quoteNumber, setQuoteNumber] = useState("");
+  const [savedQuotation, setSavedQuotationState] = useState<SavedQuotationRef | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -82,9 +94,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setItems(stored.items);
         setCustomerState(stored.customer);
-        if (stored.items.length > 0) {
-          setQuoteNumber(stored.quoteNumber || generateQuoteNumber());
-        }
+        setSavedQuotationState(stored.items.length > 0 ? stored.savedQuotation : null);
       }
     } catch {
       // Si el dato guardado está corrupto, empezamos con una cotización vacía.
@@ -95,16 +105,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, customer, quoteNumber }));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, customer, savedQuotation }));
     } catch {
       // Sin espacio o sin almacenamiento disponible: la cotización sigue
       // funcionando en memoria durante esta visita.
     }
-  }, [items, customer, quoteNumber, hydrated]);
+  }, [items, customer, savedQuotation, hydrated]);
 
-  // Cuando la cotización pasa de vacía a tener productos (o viceversa), el
-  // número de cotización se genera o se limpia en el mismo evento que
-  // provoca el cambio — no en un efecto aparte — para no encadenar renders.
+  // Si la cotización se vacía, una referencia guardada previamente ya no
+  // aplica — la próxima vez que se guarde será una cotización distinta.
   const setQty = useCallback(
     (productId: string, name: string, qty: number) => {
       const next =
@@ -114,17 +123,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             ? items.map((i) => (i.productId === productId ? { ...i, qty, name } : i))
             : [...items, { productId, name, qty }];
       setItems(next);
-      if (next.length === 0) setQuoteNumber("");
-      else if (!quoteNumber) setQuoteNumber(generateQuoteNumber());
+      if (next.length === 0) setSavedQuotationState(null);
     },
-    [items, quoteNumber],
+    [items],
   );
 
   const removeItem = useCallback(
     (productId: string) => {
       const next = items.filter((i) => i.productId !== productId);
       setItems(next);
-      if (next.length === 0) setQuoteNumber("");
+      if (next.length === 0) setSavedQuotationState(null);
     },
     [items],
   );
@@ -133,11 +141,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setCustomerState((prev) => ({ ...prev, ...patch }));
   }, []);
 
+  const setSavedQuotation = useCallback((ref: SavedQuotationRef | null) => {
+    setSavedQuotationState(ref);
+  }, []);
+
   const totalCount = useMemo(() => items.reduce((sum, i) => sum + i.qty, 0), [items]);
 
   const value = useMemo(
-    () => ({ items, totalCount, setQty, removeItem, customer, setCustomer, quoteNumber }),
-    [items, totalCount, setQty, removeItem, customer, setCustomer, quoteNumber],
+    () => ({
+      items,
+      totalCount,
+      setQty,
+      removeItem,
+      customer,
+      setCustomer,
+      savedQuotation,
+      setSavedQuotation,
+    }),
+    [items, totalCount, setQty, removeItem, customer, setCustomer, savedQuotation, setSavedQuotation],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
