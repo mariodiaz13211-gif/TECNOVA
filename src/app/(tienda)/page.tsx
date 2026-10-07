@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const categorias = [
@@ -27,6 +28,21 @@ const valores = [
 export default function Home() {
   return (
     <>
+      <section className="border-b border-line/80 bg-ink-soft">
+        <div className="mx-auto flex max-w-6xl justify-center px-6 py-14 md:py-20">
+          <div className="relative h-28 w-full max-w-xs sm:h-36 sm:max-w-sm md:h-44 md:max-w-md">
+            <Image
+              src="/logo-tecnova.png"
+              alt="TECNOVA"
+              fill
+              priority
+              sizes="(min-width: 768px) 28rem, (min-width: 640px) 24rem, 20rem"
+              className="object-contain"
+            />
+          </div>
+        </div>
+      </section>
+
       <section className="relative overflow-hidden border-b border-line/80">
         <div className="beam absolute -right-24 top-0 h-[520px] w-[420px] rotate-12 opacity-20 blur-3xl" />
 
