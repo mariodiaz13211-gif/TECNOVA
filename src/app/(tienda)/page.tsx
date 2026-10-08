@@ -30,16 +30,14 @@ export default function Home() {
     <>
       <section className="border-b border-line/80 bg-ink-soft">
         <div className="mx-auto flex max-w-6xl justify-center px-6 py-14 md:py-20">
-          <div className="relative h-28 w-full max-w-xs sm:h-36 sm:max-w-sm md:h-44 md:max-w-md">
-            <Image
-              src="/logo-tecnova.png"
-              alt="TECNOVA"
-              fill
-              priority
-              sizes="(min-width: 768px) 28rem, (min-width: 640px) 24rem, 20rem"
-              className="object-contain"
-            />
-          </div>
+          <Image
+            src="/logo-tecnova.png"
+            alt="TECNOVA"
+            width={800}
+            height={300}
+            priority
+            className="h-auto w-full max-w-xs sm:max-w-sm md:max-w-md object-contain"
+          />
         </div>
       </section>
 
