@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 const categorias = [
@@ -29,15 +28,10 @@ export default function Home() {
   return (
     <>
       <section className="border-b border-line/80 bg-ink-soft">
-        <div className="mx-auto flex max-w-6xl justify-center px-6 py-14 md:py-20">
-          <Image
-            src="/logo-tecnova.png"
-            alt="TECNOVA"
-            width={800}
-            height={300}
-            priority
-            className="h-auto w-full max-w-xs sm:max-w-sm md:max-w-md object-contain"
-          />
+        <div className="mx-auto flex max-w-6xl justify-center px-6 py-12 md:py-16">
+          <h2 className="font-display text-4xl tracking-tight text-paper sm:text-5xl md:text-6xl">
+            TecNova
+          </h2>
         </div>
       </section>
 
