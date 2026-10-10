@@ -27,13 +27,15 @@ const valores = [
 export default function Home() {
   return (
     <>
-      <section className="border-b border-line/80 bg-ink-soft">
-        <div className="mx-auto flex max-w-6xl justify-center px-6 py-12 md:py-16">
-          <h2 className="font-display text-4xl tracking-tight text-paper sm:text-5xl md:text-6xl">
-            TecNova
-          </h2>
+      <div className="mx-auto max-w-6xl px-6 pt-6">
+        <div className="group inline-flex items-center gap-2">
+          <span className="relative font-display text-xl font-medium tracking-tight text-paper">
+            <span className="relative z-10">tec</span>
+            <span className="relative z-10 text-cyan">nova</span>
+            <span className="beam absolute -bottom-0.5 left-0 h-[3px] w-full origin-left scale-x-75 transition-transform duration-300 group-hover:scale-x-100" />
+          </span>
         </div>
-      </section>
+      </div>
 
       <section className="relative overflow-hidden border-b border-line/80">
         <div className="beam absolute -right-24 top-0 h-[520px] w-[420px] rotate-12 opacity-20 blur-3xl" />
